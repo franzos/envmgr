@@ -15,7 +15,36 @@ use crate::store::queries;
 use crate::types::{EnvEntry, GitContext, SaveMetadata};
 
 #[derive(Parser)]
-#[command(name = "envmgr", about = "Manage .env files across git branches")]
+#[command(
+    name = "envmgr",
+    about = "Manage .env files across git branches",
+    help_template = "\
+{about-with-newline}
+{usage-heading} {usage}
+
+Daily Operations:
+  init       Initialize the envmgr store
+  save       Save the current .env file
+  list       List saved versions
+  diff       Show diff between two versions
+  apply      Apply a saved version to disk
+  env        Print export statements for a saved version
+  exec       Run a command with saved environment variables
+  history    Show history with diffs between consecutive versions
+  delete     Delete saved versions
+  global     List all projects with save counts
+
+Sharing:
+  share      Share a saved .env version (export to stdout)
+  import     Import a shared .env file into the store
+
+Backup & Transfer:
+  dump       Export entire store to a file
+  load       Import a dump file into the store
+
+Options:
+{options}{after-help}"
+)]
 pub struct Cli {
     /// Path to the encryption key file
     #[arg(long, global = true)]
