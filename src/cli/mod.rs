@@ -166,6 +166,9 @@ pub enum Commands {
         /// Show detailed information
         #[arg(short, long)]
         long: bool,
+        /// Filter by file name pattern (e.g. *.env)
+        #[arg(short, long)]
+        filter: Option<String>,
     },
 
     /// Delete saved versions
@@ -318,12 +321,14 @@ pub fn run() -> Result<()> {
             commit,
             max,
             long,
+            filter,
         } => commands::history::run(
             &cwd,
             branch.as_deref(),
             commit.as_deref(),
             max,
             long,
+            filter.as_deref(),
             key_file,
         ),
         Commands::Delete {

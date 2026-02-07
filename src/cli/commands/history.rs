@@ -13,6 +13,7 @@ pub fn run(
     commit: Option<&str>,
     max: usize,
     _long: bool,
+    filter: Option<&str>,
     key_file: Option<&str>,
 ) -> Result<()> {
     let conn = cli::require_store()?;
@@ -26,7 +27,7 @@ pub fn run(
     };
 
     let saves =
-        queries::list_saves(&conn, &project_path, query_branch, commit, max, None)?;
+        queries::list_saves(&conn, &project_path, query_branch, commit, max, filter)?;
 
     if saves.is_empty() {
         println!("No saved versions found.");

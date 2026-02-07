@@ -261,8 +261,13 @@ pub fn list_saves(
 
     if let Some(f) = filter {
         sql.push_str(&format!(" AND file_path LIKE ?{idx}"));
-        // Convert glob-style `*` to SQL `%`.
-        let pattern = f.replace('*', "%");
+        // Convert glob-style `*` to SQL `%`, and auto-prefix with `%`
+        // so bare names like `.env` match paths ending in `.env`.
+        let pattern = if f.contains('*') || f.contains('/') {
+            f.replace('*', "%")
+        } else {
+            format!("%{f}")
+        };
         param_values.push(Box::new(pattern));
         idx += 1;
     }
