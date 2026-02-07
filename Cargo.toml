@@ -1,10 +1,10 @@
 [package]
 name = "envmgr"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Franz Geffke <mail@gofranz.com>"]
 description = "Manage .env files across git branches with versioning, diffing, and optional encryption"
-license = "MIT"
+license = "GPL-3.0"
 repository = "https://github.com/franzos/envmgr"
 homepage = "https://github.com/franzos/envmgr"
 keywords = ["env", "dotenv", "git", "encryption", "cli"]
