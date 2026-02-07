@@ -1,5 +1,8 @@
 use std::path::Path;
 
+use colored::Colorize;
+use comfy_table::{presets, Table};
+
 use crate::cli::{self, output};
 use crate::error::Result;
 use crate::store::queries;
@@ -65,10 +68,10 @@ pub fn run(
 
     // Default view: show header.
     if let Some(ref ctx) = git_ctx {
-        println!("-> {}", ctx.branch);
-        println!("commit: {}", ctx.commit);
+        println!("{} {}", "->".bold(), ctx.branch.bold());
+        println!("{} {}", "commit:".dimmed(), ctx.commit.dimmed());
     } else {
-        println!("-> {}", project_path);
+        println!("{} {}", "->".bold(), project_path.bold());
     }
 
     // Non-git: show all saves without branch logic.
@@ -94,7 +97,7 @@ pub fn run(
             queries::list_saves_history(&conn, &project_path, cb, max)?;
         if !history.is_empty() {
             println!();
-            println!("History:");
+            println!("{}", "History:".bold());
             print_saves(&history, 1, long, &project_path, true);
         }
     } else {
@@ -105,7 +108,7 @@ pub fn run(
                 queries::list_saves_history(&conn, &project_path, cb, remaining)?;
             if !history.is_empty() {
                 println!();
-                println!("History:");
+                println!("{}", "History:".bold());
                 let start = branch_saves.len() + 1;
                 print_saves(&history, start, long, &project_path, true);
             }
@@ -118,7 +121,7 @@ pub fn run(
 /// Format the message suffix for display: " -- message" or "".
 fn message_suffix(save: &SaveMetadata) -> String {
     match &save.message {
-        Some(m) => format!(" -- {m}"),
+        Some(m) => format!(" {}", format!("-- {m}").dimmed().italic()),
         None => String::new(),
     }
 }
@@ -130,39 +133,96 @@ fn print_saves(
     project_path: &str,
     show_branch: bool,
 ) {
+    if long {
+        print_saves_table(saves, start_num, project_path, show_branch);
+    } else {
+        print_saves_short(saves, start_num, project_path, show_branch);
+    }
+}
+
+fn print_saves_short(
+    saves: &[SaveMetadata],
+    start_num: usize,
+    project_path: &str,
+    show_branch: bool,
+) {
     for (i, save) in saves.iter().enumerate() {
         let num = start_num + i;
         let marker = match cli::disk_content_hash(project_path, &save.file_path) {
-            Some(ref h) if *h == save.content_hash => "*",
-            _ => "",
+            Some(ref h) if *h == save.content_hash => format!(" {}", "*".bold().green()),
+            _ => String::new(),
         };
         let msg = message_suffix(save);
 
-        if long {
-            let hash = output::truncate_hash(&save.content_hash);
-            if show_branch && !save.branch.is_empty() {
-                println!(
-                    "{}. {}: {} | {} | {}{}{}",
-                    num, save.file_path, save.timestamp, hash, save.branch, marker, msg
-                );
-            } else {
-                println!(
-                    "{}. {}: {} | {}{}{}",
-                    num, save.file_path, save.timestamp, hash, marker, msg
-                );
-            }
-        } else if show_branch && !save.branch.is_empty() {
+        if show_branch && !save.branch.is_empty() {
             println!(
                 "{}. {}: {} / {}{}{}",
-                num, save.file_path, save.timestamp, save.branch, marker, msg
+                format!("{num}").bold(),
+                save.file_path,
+                save.timestamp.dimmed(),
+                save.branch.cyan(),
+                marker,
+                msg,
             );
         } else {
             println!(
                 "{}. {}: {}{}{}",
-                num, save.file_path, save.timestamp, marker, msg
+                format!("{num}").bold(),
+                save.file_path,
+                save.timestamp.dimmed(),
+                marker,
+                msg,
             );
         }
     }
+}
+
+fn print_saves_table(
+    saves: &[SaveMetadata],
+    start_num: usize,
+    project_path: &str,
+    show_branch: bool,
+) {
+    let mut table = Table::new();
+    table.load_preset(presets::NOTHING);
+
+    if show_branch {
+        table.set_header(vec!["#", "File", "Timestamp", "Hash", "Branch", "Msg"]);
+    } else {
+        table.set_header(vec!["#", "File", "Timestamp", "Hash", "Msg"]);
+    }
+
+    for (i, save) in saves.iter().enumerate() {
+        let num = start_num + i;
+        let marker = match cli::disk_content_hash(project_path, &save.file_path) {
+            Some(ref h) if *h == save.content_hash => " *",
+            _ => "",
+        };
+        let hash = output::truncate_hash(&save.content_hash);
+        let msg = save.message.as_deref().unwrap_or("");
+        let num_str = format!("{num}{marker}");
+
+        if show_branch {
+            table.add_row(vec![
+                &num_str,
+                &save.file_path,
+                &save.timestamp,
+                &hash,
+                &save.branch,
+                msg,
+            ]);
+        } else {
+            table.add_row(vec![
+                &num_str,
+                &save.file_path,
+                &save.timestamp,
+                &hash,
+                msg,
+            ]);
+        }
+    }
+
+    println!("{table}");
 }
 
 fn run_json(

@@ -255,6 +255,11 @@ pub enum Commands {
 
 /// Run the CLI application.
 pub fn run() -> Result<()> {
+    // Disable ANSI colors when stdout is not a terminal (piped/redirected).
+    if !output::is_stdout_terminal() {
+        colored::control::set_override(false);
+    }
+
     let cli = Cli::parse();
     let cwd = std::env::current_dir()?;
     let key_file = cli.key_file.as_deref();

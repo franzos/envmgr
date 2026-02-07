@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use colored::Colorize;
+
 use crate::cli::{self, output};
 use crate::error::{Error, Result};
 use crate::parser;
@@ -38,15 +40,15 @@ pub fn run(
             && diff_result.removed.is_empty()
             && diff_result.changed.is_empty()
         {
-            println!("File is identical to saved version.");
+            println!("{}", "File is identical to saved version.".dimmed());
             return Ok(());
         }
 
-        println!("Changes to {}:", target_path.display());
+        println!("{}", format!("Changes to {}:", target_path.display()).bold());
         print!("{}", output::format_diff_text(&diff_result, false));
 
         if !cli::confirm("Apply changes?") {
-            println!("Aborted.");
+            println!("{}", "Aborted.".yellow());
             return Ok(());
         }
     }
@@ -56,7 +58,7 @@ pub fn run(
     }
 
     std::fs::write(&target_path, &content)?;
-    println!("Applied version to {}", target_path.display());
+    println!("{} {}", "Applied version to".green().bold(), target_path.display());
     Ok(())
 }
 

@@ -2,6 +2,8 @@ use std::path::Path;
 
 use chrono::{SecondsFormat, Utc};
 
+use colored::Colorize;
+
 use crate::cli;
 use crate::error::{Error, Result};
 use crate::parser;
@@ -46,10 +48,10 @@ pub fn run(cwd: &Path, file: Option<&str>, key_file: Option<&str>, message: Opti
     )?;
 
     let msg_suffix = match message {
-        Some(m) => format!(" -- {m}"),
+        Some(m) => format!(" {}", format!("-- {m}").dimmed()),
         None => String::new(),
     };
 
-    println!("Saved {} ({} variables){}", file_path, entries.len(), msg_suffix);
+    println!("{} {} ({} variables){}", "Saved".green().bold(), file_path, entries.len(), msg_suffix);
     Ok(())
 }

@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use colored::Colorize;
+
 use crate::cli;
 use crate::error::{Error, Result};
 use crate::store::queries;
@@ -30,12 +32,12 @@ pub fn run(
                 "Delete {count} saved versions for branch '{b}'?"
             ))
         {
-            println!("Aborted.");
+            println!("{}", "Aborted.".yellow());
             return Ok(());
         }
 
         let deleted = queries::delete_saves_by_branch(&conn, &project_path, b)?;
-        println!("Deleted {deleted} versions.");
+        println!("{}", format!("Deleted {deleted} versions.").green().bold());
         return Ok(());
     }
 
@@ -54,12 +56,12 @@ pub fn run(
                 "Delete all {count} saved versions for this project?"
             ))
         {
-            println!("Aborted.");
+            println!("{}", "Aborted.".yellow());
             return Ok(());
         }
 
         let deleted = queries::delete_saves_by_project(&conn, &project_path)?;
-        println!("Deleted {deleted} versions.");
+        println!("{}", format!("Deleted {deleted} versions.").green().bold());
         return Ok(());
     }
 
@@ -78,7 +80,7 @@ pub fn run(
                 save.file_path, save.timestamp, branch_info
             );
             if !cli::confirm("Proceed?") {
-                println!("Aborted.");
+                println!("{}", "Aborted.".yellow());
                 return Ok(());
             }
         }
@@ -90,7 +92,8 @@ pub fn run(
             format!(" / {}", save.branch)
         };
         println!(
-            "Deleted: {} ({}{})",
+            "{} {} ({}{})",
+            "Deleted:".green().bold(),
             save.file_path, save.timestamp, branch_info
         );
         return Ok(());

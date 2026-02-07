@@ -1,6 +1,8 @@
 use std::io::Read;
 use std::path::Path;
 
+use colored::Colorize;
+
 use crate::cli;
 use crate::error::Result;
 use crate::export;
@@ -62,7 +64,8 @@ pub fn run(
     // Warn if content hash doesn't match (but still import).
     if !envelope.content_hash.is_empty() && computed_hash != envelope.content_hash {
         eprintln!(
-            "warning: content hash mismatch (expected {}, computed {})",
+            "{} content hash mismatch (expected {}, computed {})",
+            "warning:".yellow(),
             envelope.content_hash, computed_hash
         );
     }
@@ -82,7 +85,8 @@ pub fn run(
     )?;
 
     println!(
-        "Imported {} ({} variables, branch: {}, timestamp: {})",
+        "{} {} ({} variables, branch: {}, timestamp: {})",
+        "Imported".green().bold(),
         envelope.file,
         entries.len(),
         if envelope.branch.is_empty() {

@@ -1,5 +1,7 @@
 use std::io::{self, IsTerminal};
 
+use colored::Colorize;
+
 use crate::types::DiffResult;
 
 /// Check if stdout is a terminal (vs piped).
@@ -16,35 +18,56 @@ pub fn truncate_hash(hash: &str) -> String {
     }
 }
 
-/// Format a diff result as human-readable text.
+/// Format a diff result as human-readable text with colors.
 pub fn format_diff_text(result: &DiffResult, full: bool) -> String {
     let mut out = String::new();
 
     for entry in &result.removed {
-        out.push_str(&format!("- {}={}\n", entry.key, entry.value));
+        out.push_str(&format!(
+            "{}\n",
+            format!("- {}={}", entry.key, entry.value).red()
+        ));
     }
 
     for entry in &result.added {
-        out.push_str(&format!("+ {}={}\n", entry.key, entry.value));
+        out.push_str(&format!(
+            "{}\n",
+            format!("+ {}={}", entry.key, entry.value).green()
+        ));
     }
 
     for (old, new) in &result.changed {
         if old.comment != new.comment {
             let old_c = old.comment.as_deref().unwrap_or("");
             let new_c = new.comment.as_deref().unwrap_or("");
-            out.push_str(&format!("~ # {old_c}  ->  # {new_c}\n"));
+            out.push_str(&format!(
+                "{}\n",
+                format!("~ # {old_c}  ->  # {new_c}").yellow()
+            ));
         }
         if old.value != new.value {
-            out.push_str(&format!("- {}={}\n", old.key, old.value));
-            out.push_str(&format!("+ {}={}\n", new.key, new.value));
+            out.push_str(&format!(
+                "{}\n",
+                format!("- {}={}", old.key, old.value).red()
+            ));
+            out.push_str(&format!(
+                "{}\n",
+                format!("+ {}={}", new.key, new.value).green()
+            ));
         } else {
-            out.push_str(&format!("  {}={}\n", new.key, new.value));
+            out.push_str(&format!(
+                "{}\n",
+                format!("  {}={}", new.key, new.value).dimmed()
+            ));
         }
     }
 
     if full {
         for entry in &result.unchanged {
-            out.push_str(&format!("  {}={}\n", entry.key, entry.value));
+            out.push_str(&format!(
+                "{}\n",
+                format!("  {}={}", entry.key, entry.value).dimmed()
+            ));
         }
     }
 
@@ -105,6 +128,10 @@ mod tests {
     use super::*;
     use crate::types::EnvEntry;
 
+    fn no_color() {
+        colored::control::set_override(false);
+    }
+
     #[test]
     fn truncate_hash_long() {
         let hash = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
@@ -118,6 +145,7 @@ mod tests {
 
     #[test]
     fn diff_text_added() {
+        no_color();
         let result = DiffResult {
             added: vec![EnvEntry {
                 key: "NEW".to_string(),
@@ -134,6 +162,7 @@ mod tests {
 
     #[test]
     fn diff_text_removed() {
+        no_color();
         let result = DiffResult {
             added: vec![],
             removed: vec![EnvEntry {
@@ -150,6 +179,7 @@ mod tests {
 
     #[test]
     fn diff_text_changed_value() {
+        no_color();
         let result = DiffResult {
             added: vec![],
             removed: vec![],
@@ -174,6 +204,7 @@ mod tests {
 
     #[test]
     fn diff_text_changed_comment() {
+        no_color();
         let result = DiffResult {
             added: vec![],
             removed: vec![],
@@ -198,6 +229,7 @@ mod tests {
 
     #[test]
     fn diff_text_unchanged_hidden_by_default() {
+        no_color();
         let result = DiffResult {
             added: vec![],
             removed: vec![],
@@ -214,6 +246,7 @@ mod tests {
 
     #[test]
     fn diff_text_unchanged_shown_with_full() {
+        no_color();
         let result = DiffResult {
             added: vec![],
             removed: vec![],

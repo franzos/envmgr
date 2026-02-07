@@ -1,3 +1,5 @@
+use comfy_table::{presets, Table};
+
 use crate::cli;
 use crate::error::Result;
 use crate::store::queries;
@@ -12,17 +14,19 @@ pub fn run() -> Result<()> {
         return Ok(());
     }
 
+    let mut table = Table::new();
+    table.load_preset(presets::NOTHING);
+    table.set_header(vec!["Project", "Saves", "Last Save"]);
+
     for project in &projects {
-        let label = if project.save_count == 1 {
-            "save,"
-        } else {
-            "saves,"
-        };
-        println!(
-            "{:<50} {} {:<7} last: {}",
-            project.project_path, project.save_count, label, project.last_save
-        );
+        table.add_row(vec![
+            &project.project_path,
+            &project.save_count.to_string(),
+            &project.last_save,
+        ]);
     }
+
+    println!("{table}");
 
     Ok(())
 }

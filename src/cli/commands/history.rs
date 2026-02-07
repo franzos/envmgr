@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use colored::Colorize;
+
 use crate::cli::{self, output};
 use crate::error::Result;
 use crate::store::queries;
@@ -37,16 +39,21 @@ pub fn run(
         let branch_label = if save.branch.is_empty() {
             String::new()
         } else {
-            format!(" | {}", save.branch)
+            format!(" | {}", save.branch.cyan())
         };
         let msg = match &save.message {
-            Some(m) => format!(" -- {m}"),
+            Some(m) => format!(" {}", format!("-- {m}").dimmed().italic()),
             None => String::new(),
         };
 
         println!(
             "{}. {}: {} | {}{}{}",
-            num, save.file_path, save.timestamp, hash, branch_label, msg
+            format!("{num}").bold(),
+            save.file_path,
+            save.timestamp.dimmed(),
+            hash.dimmed(),
+            branch_label,
+            msg,
         );
 
         // Show diff between this version and the next (older) one.
@@ -60,7 +67,7 @@ pub fn run(
             if !diff_text.is_empty() {
                 print!("{diff_text}");
             }
-            println!();
+            println!("{}", "---".dimmed());
         }
     }
 
