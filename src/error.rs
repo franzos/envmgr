@@ -9,6 +9,9 @@ pub enum Error {
     #[error("database error: {0}")]
     Database(#[from] rusqlite::Error),
 
+    #[error("migration error: {0}")]
+    Migration(String),
+
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
 

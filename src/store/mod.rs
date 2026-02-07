@@ -9,16 +9,17 @@ use crate::error::{Error, Result};
 
 /// Open (or create) the SQLite store at the given path.
 pub fn open(path: &Path) -> Result<Connection> {
-    let conn = Connection::open(path)?;
+    let mut conn = Connection::open(path)?;
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
+    schema::migrate(&mut conn)?;
     Ok(conn)
 }
 
 /// Open an in-memory SQLite store (for tests).
 pub fn open_memory() -> Result<Connection> {
-    let conn = Connection::open_in_memory()?;
+    let mut conn = Connection::open_in_memory()?;
     conn.execute_batch("PRAGMA foreign_keys=ON;")?;
-    schema::create_tables(&conn)?;
+    schema::migrate(&mut conn)?;
     Ok(conn)
 }
 
@@ -29,7 +30,6 @@ pub fn init(conn: &Connection, encryption_mode: &str) -> Result<()> {
         return Err(Error::StoreAlreadyInitialized);
     }
 
-    schema::create_tables(conn)?;
     queries::set_config(conn, "version", "1")?;
     queries::set_config(conn, "encryption_mode", encryption_mode)?;
     Ok(())
@@ -59,8 +59,9 @@ mod tests {
 
     #[test]
     fn init_and_check() {
-        let conn = Connection::open_in_memory().unwrap();
+        let mut conn = Connection::open_in_memory().unwrap();
         conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        schema::migrate(&mut conn).unwrap();
         assert!(!is_initialized(&conn).unwrap());
         init(&conn, "none").unwrap();
         assert!(is_initialized(&conn).unwrap());
@@ -68,8 +69,9 @@ mod tests {
 
     #[test]
     fn init_twice_fails() {
-        let conn = Connection::open_in_memory().unwrap();
+        let mut conn = Connection::open_in_memory().unwrap();
         conn.execute_batch("PRAGMA foreign_keys=ON;").unwrap();
+        schema::migrate(&mut conn).unwrap();
         init(&conn, "none").unwrap();
         let err = init(&conn, "none").unwrap_err();
         assert!(err.to_string().contains("already initialized"));

@@ -1,17 +1,17 @@
 use rusqlite::Connection;
+use rusqlite_migration::{M, Migrations};
 
-use crate::error::Result;
+use crate::error::{Error, Result};
 
-/// Create all tables if they don't already exist.
-pub fn create_tables(conn: &Connection) -> Result<()> {
-    conn.execute_batch(
+fn migrations() -> Migrations<'static> {
+    Migrations::new(vec![M::up(
         "
-        CREATE TABLE IF NOT EXISTS config (
+        CREATE TABLE config (
             key   TEXT PRIMARY KEY,
             value TEXT NOT NULL
         );
 
-        CREATE TABLE IF NOT EXISTS saves (
+        CREATE TABLE saves (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
             project_path TEXT    NOT NULL,
             file_path    TEXT    NOT NULL,
@@ -23,13 +23,13 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
             message      TEXT    NOT NULL DEFAULT ''
         );
 
-        CREATE INDEX IF NOT EXISTS idx_saves_project_branch
+        CREATE INDEX idx_saves_project_branch
             ON saves(project_path, branch);
 
-        CREATE INDEX IF NOT EXISTS idx_saves_content_hash
+        CREATE INDEX idx_saves_content_hash
             ON saves(content_hash);
 
-        CREATE TABLE IF NOT EXISTS entries (
+        CREATE TABLE entries (
             id       INTEGER PRIMARY KEY AUTOINCREMENT,
             save_id  INTEGER NOT NULL REFERENCES saves(id) ON DELETE CASCADE,
             key      TEXT    NOT NULL,
@@ -37,9 +37,15 @@ pub fn create_tables(conn: &Connection) -> Result<()> {
             comment  BLOB    NOT NULL DEFAULT ''
         );
 
-        CREATE INDEX IF NOT EXISTS idx_entries_save_id
+        CREATE INDEX idx_entries_save_id
             ON entries(save_id);
         ",
-    )?;
-    Ok(())
+    )])
+}
+
+/// Run all pending migrations on the connection.
+pub fn migrate(conn: &mut Connection) -> Result<()> {
+    migrations()
+        .to_latest(conn)
+        .map_err(|e| Error::Migration(e.to_string()))
 }
