@@ -1,0 +1,29 @@
+[package]
+name = "envmgr"
+version = "0.1.0"
+edition = "2024"
+authors = ["Franz Geffke <mail@gofranz.com>"]
+description = "Manage .env files across git branches with versioning, diffing, and optional encryption"
+license = "MIT"
+repository = "https://github.com/franzos/envmgr"
+homepage = "https://github.com/franzos/envmgr"
+keywords = ["env", "dotenv", "git", "encryption", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+readme = "README.md"
+
+[dependencies]
+aes-gcm = "0.10"
+argon2 = "0.5"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+hmac = "0.12"
+rand = "0.8"
+rpassword = "5"
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"
