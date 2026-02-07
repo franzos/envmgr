@@ -355,7 +355,7 @@ mod tests {
 
     #[test]
     fn encrypt_export_password() {
-        let data = b"# envmgr export\nDB_HOST=localhost\n";
+        let data = b"# envstash export\nDB_HOST=localhost\n";
         let encrypted = encrypt_export(data, "password", None, Some("test-pw"), Path::new("/tmp"))
             .unwrap();
         assert!(encrypted.starts_with(b"EVPW"));
@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn encrypt_export_password_no_password_errors() {
-        // Without password and without ENVMGR_PASSWORD, this should
+        // Without password and without ENVSTASH_PASSWORD, this should
         // fall through to prompt which will fail in test context.
         // We test by setting the env var.
         let data = b"test data";

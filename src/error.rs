@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-/// All errors produced by envmgr.
+/// All errors produced by envstash.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("IO error: {0}")]
@@ -21,10 +21,10 @@ pub enum Error {
     #[error("file not found: {0}")]
     FileNotFound(PathBuf),
 
-    #[error("store not initialized. Run `envmgr init` first.")]
+    #[error("store not initialized. Run `envstash init` first.")]
     StoreNotInitialized,
 
-    #[error("store already initialized. Use `envmgr rekey` to change encryption.")]
+    #[error("store already initialized. Use `envstash rekey` to change encryption.")]
     StoreAlreadyInitialized,
 
     #[error("not a git repository")]
@@ -63,7 +63,7 @@ pub enum Error {
     #[error("invalid key length: expected {expected}, got {got}")]
     InvalidKeyLength { expected: usize, got: usize },
 
-    #[error("Encryption key required. Provide via --key-file or ENVMGR_KEY_FILE.")]
+    #[error("Encryption key required. Provide via --key-file or ENVSTASH_KEY_FILE.")]
     EncryptionKeyRequired,
 
     #[error("{0}")]

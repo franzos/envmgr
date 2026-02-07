@@ -9,7 +9,7 @@ use crate::types::{EnvEntry, SaveMetadata};
 const FORMAT_VERSION: u32 = 1;
 
 /// Text format header prefix.
-const TEXT_HEADER_PREFIX: &str = "# envmgr export";
+const TEXT_HEADER_PREFIX: &str = "# envstash export";
 
 /// JSON envelope for a shared .env snapshot.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -151,7 +151,7 @@ pub fn from_json(input: &str) -> Result<ExportEnvelope> {
 ///
 /// Format:
 /// ```text
-/// # envmgr export
+/// # envstash export
 /// # version: 1
 /// # file: path/to/.env
 /// # branch: feature/foo
@@ -388,7 +388,7 @@ mod tests {
     fn text_format_has_header() {
         let envelope = sample_envelope();
         let text = to_text(&envelope);
-        assert!(text.starts_with("# envmgr export\n"));
+        assert!(text.starts_with("# envstash export\n"));
         assert!(text.contains("# version: 1\n"));
         assert!(text.contains("# file: apps/backend/.env\n"));
         assert!(text.contains("# branch: feature/auth\n"));
@@ -439,7 +439,7 @@ mod tests {
 
     #[test]
     fn from_text_missing_version_fails() {
-        let input = "# envmgr export\n# file: .env\n\nKEY=val\n";
+        let input = "# envstash export\n# file: .env\n\nKEY=val\n";
         let result = from_text(input);
         assert!(result.is_err());
     }

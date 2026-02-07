@@ -200,11 +200,11 @@ mod tests {
 
         // Safety: this test is single-threaded for env var access.
         unsafe {
-            std::env::set_var("ENVMGR_PASSWORD", pw);
+            std::env::set_var("ENVSTASH_PASSWORD", pw);
         }
         let loaded = load_key(EncryptionMode::Password, &key_path).unwrap();
         unsafe {
-            std::env::remove_var("ENVMGR_PASSWORD");
+            std::env::remove_var("ENVSTASH_PASSWORD");
         }
 
         assert_eq!(loaded, key);

@@ -16,7 +16,7 @@ use crate::types::{EnvEntry, GitContext, SaveMetadata};
 
 #[derive(Parser)]
 #[command(
-    name = "envmgr",
+    name = "envstash",
     version,
     about = "Manage .env files across git branches",
     help_template = "\
@@ -24,7 +24,7 @@ use crate::types::{EnvEntry, GitContext, SaveMetadata};
 {usage-heading} {usage}
 
 Daily Operations:
-  init       Initialize the envmgr store
+  init       Initialize the envstash store
   save       Save the current .env file
   list       List saved versions
   diff       Show diff between two versions or files
@@ -57,7 +57,7 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Initialize the envmgr store
+    /// Initialize the envstash store
     Init {
         /// Encryption mode: none, gpg, or password
         #[arg(long, default_value = "none")]
@@ -395,7 +395,7 @@ pub fn run() -> Result<()> {
 // Shared CLI helpers
 // ---------------------------------------------------------------------------
 
-/// Store directory path (~/.local/share/envmgr/).
+/// Store directory path (~/.local/share/envstash/).
 pub fn store_dir() -> PathBuf {
     let data_dir = std::env::var("XDG_DATA_HOME")
         .map(PathBuf::from)
@@ -403,7 +403,7 @@ pub fn store_dir() -> PathBuf {
             let home = std::env::var("HOME").expect("HOME not set");
             PathBuf::from(home).join(".local/share")
         });
-    data_dir.join("envmgr")
+    data_dir.join("envstash")
 }
 
 /// Store database file path.
@@ -442,7 +442,7 @@ pub fn load_encryption_key(
     }
 
     let db_key_path = queries::get_config(conn, "key_file")?;
-    let env_key_path = std::env::var("ENVMGR_KEY_FILE").ok();
+    let env_key_path = std::env::var("ENVSTASH_KEY_FILE").ok();
 
     let key_path = crypto::resolve_key_file(
         key_file_flag.map(Path::new),
@@ -611,6 +611,6 @@ mod tests {
     #[test]
     fn store_dir_uses_xdg() {
         let dir = store_dir();
-        assert!(dir.ends_with("envmgr"));
+        assert!(dir.ends_with("envstash"));
     }
 }

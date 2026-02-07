@@ -33,17 +33,17 @@ jobs:
       - name: Package
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../envmgr-${{ matrix.target }}.tar.gz envmgr
+          tar czf ../../../envstash-${{ matrix.target }}.tar.gz envstash
           cd ../../..
-          shasum -a 256 envmgr-${{ matrix.target }}.tar.gz > envmgr-${{ matrix.target }}.tar.gz.sha256
+          shasum -a 256 envstash-${{ matrix.target }}.tar.gz > envstash-${{ matrix.target }}.tar.gz.sha256
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: envmgr-${{ matrix.target }}
+          name: envstash-${{ matrix.target }}
           path: |
-            envmgr-${{ matrix.target }}.tar.gz
-            envmgr-${{ matrix.target }}.tar.gz.sha256
+            envstash-${{ matrix.target }}.tar.gz
+            envstash-${{ matrix.target }}.tar.gz.sha256
 
   deb:
     runs-on: ubuntu-latest
@@ -61,7 +61,7 @@ jobs:
       - name: Upload deb artifact
         uses: actions/upload-artifact@v4
         with:
-          name: envmgr-deb
+          name: envstash-deb
           path: target/debian/*.deb
 
   rpm:
@@ -83,7 +83,7 @@ jobs:
       - name: Upload rpm artifact
         uses: actions/upload-artifact@v4
         with:
-          name: envmgr-rpm
+          name: envstash-rpm
           path: target/generate-rpm/*.rpm
 
   release:
@@ -101,7 +101,7 @@ jobs:
           generate_release_notes: true
           draft: false
           files: |
-            envmgr-*.tar.gz
-            envmgr-*.tar.gz.sha256
+            envstash-*.tar.gz
+            envstash-*.tar.gz.sha256
             *.deb
             *.rpm

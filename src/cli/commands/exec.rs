@@ -51,7 +51,7 @@ pub fn run(
     }
 
     // Never leak the store password to child processes.
-    cmd.env_remove("ENVMGR_PASSWORD");
+    cmd.env_remove("ENVSTASH_PASSWORD");
 
     let status = cmd
         .status()

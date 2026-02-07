@@ -1,4 +1,4 @@
-# envmgr
+# envstash
 
 A CLI tool for managing `.env` files across git branches. Save, version, diff, restore, and share environment variables with optional encryption.
 
@@ -7,63 +7,63 @@ A CLI tool for managing `.env` files across git branches. Save, version, diff, r
 **From crates.io:**
 
 ```bash
-cargo install envmgr
+cargo install envstash
 ```
 
 **Pre-built binaries:**
 
-Download the latest release from [GitHub Releases](https://github.com/franzos/envmgr/releases) and extract the binary to a directory in your `PATH`:
+Download the latest release from [GitHub Releases](https://github.com/franzos/envstash/releases) and extract the binary to a directory in your `PATH`:
 
 ```bash
 # macOS (Apple Silicon)
-curl -sL https://github.com/franzos/envmgr/releases/latest/download/envmgr-aarch64-apple-darwin.tar.gz | tar xz
-sudo mv envmgr /usr/local/bin/
+curl -sL https://github.com/franzos/envstash/releases/latest/download/envstash-aarch64-apple-darwin.tar.gz | tar xz
+sudo mv envstash /usr/local/bin/
 
 # macOS (Intel)
-curl -sL https://github.com/franzos/envmgr/releases/latest/download/envmgr-x86_64-apple-darwin.tar.gz | tar xz
-sudo mv envmgr /usr/local/bin/
+curl -sL https://github.com/franzos/envstash/releases/latest/download/envstash-x86_64-apple-darwin.tar.gz | tar xz
+sudo mv envstash /usr/local/bin/
 
 # Linux (x86_64)
-curl -sL https://github.com/franzos/envmgr/releases/latest/download/envmgr-x86_64-unknown-linux-gnu.tar.gz | tar xz
-sudo mv envmgr /usr/local/bin/
+curl -sL https://github.com/franzos/envstash/releases/latest/download/envstash-x86_64-unknown-linux-gnu.tar.gz | tar xz
+sudo mv envstash /usr/local/bin/
 ```
 
 **Debian/Ubuntu:**
 
-Download the `.deb` from [GitHub Releases](https://github.com/franzos/envmgr/releases) and install:
+Download the `.deb` from [GitHub Releases](https://github.com/franzos/envstash/releases) and install:
 
 ```bash
-sudo dpkg -i envmgr_*_amd64.deb
+sudo dpkg -i envstash_*_amd64.deb
 ```
 
 **Fedora/RHEL:**
 
-Download the `.rpm` from [GitHub Releases](https://github.com/franzos/envmgr/releases) and install:
+Download the `.rpm` from [GitHub Releases](https://github.com/franzos/envstash/releases) and install:
 
 ```bash
-sudo rpm -i envmgr-*.x86_64.rpm
+sudo rpm -i envstash-*.x86_64.rpm
 ```
 
 ## Quick start
 
 ```bash
 # Initialize the store
-envmgr init
+envstash init
 
 # Save the current .env file
-envmgr save
+envstash save
 
 # Save with a note
-envmgr save -m "trying new DB config"
+envstash save -m "trying new DB config"
 
 # List saved versions
-envmgr list
+envstash list
 
 # Restore a saved version
-envmgr apply 1
+envstash apply 1
 
 # See what changed between versions
-envmgr diff 1 2
+envstash diff 1 2
 ```
 
 ## Features
@@ -79,29 +79,29 @@ envmgr diff 1 2
 
 | Command | Description |
 |---------|-------------|
-| `envmgr init` | Initialize the store (choose encryption mode) |
-| `envmgr save [file] [-m msg]` | Save a `.env` file with optional message |
-| `envmgr list` | List saved versions on the current branch |
-| `envmgr diff <a> <b>` | Diff two versions (by number or hash) |
-| `envmgr apply <version>` | Restore a version to disk |
-| `envmgr env [version]` | Print `export` statements for shell eval |
-| `envmgr exec [version] -- <cmd>` | Run a command with saved env vars |
-| `envmgr history` | Show what changed between consecutive versions |
-| `envmgr delete <version>` | Remove saved versions |
-| `envmgr global` | List all projects with saved .env files |
-| `envmgr share` | Export a version for sharing |
-| `envmgr import <file>` | Import a shared export |
-| `envmgr dump <path>` | Export the entire store |
-| `envmgr load <path>` | Import a full dump |
+| `envstash init` | Initialize the store (choose encryption mode) |
+| `envstash save [file] [-m msg]` | Save a `.env` file with optional message |
+| `envstash list` | List saved versions on the current branch |
+| `envstash diff <a> <b>` | Diff two versions (by number or hash) |
+| `envstash apply <version>` | Restore a version to disk |
+| `envstash env [version]` | Print `export` statements for shell eval |
+| `envstash exec [version] -- <cmd>` | Run a command with saved env vars |
+| `envstash history` | Show what changed between consecutive versions |
+| `envstash delete <version>` | Remove saved versions |
+| `envstash global` | List all projects with saved .env files |
+| `envstash share` | Export a version for sharing |
+| `envstash import <file>` | Import a shared export |
+| `envstash dump <path>` | Export the entire store |
+| `envstash load <path>` | Import a full dump |
 
 ## Encryption
 
 Three modes, chosen at init time:
 
 ```bash
-envmgr init                    # no encryption
-envmgr init --encrypt gpg      # GPG (supports Yubikey)
-envmgr init --encrypt password # password-based (argon2id)
+envstash init                    # no encryption
+envstash init --encrypt gpg      # GPG (supports Yubikey)
+envstash init --encrypt password # password-based (argon2id)
 ```
 
 Architecture (inspired by [Tomb](https://github.com/dyne/Tomb)):
@@ -110,19 +110,19 @@ Architecture (inspired by [Tomb](https://github.com/dyne/Tomb)):
 - Metadata (branches, timestamps, file paths) stays plaintext for fast queries
 - GPG mode: one Yubikey touch per gpg-agent cache window, not per operation
 
-The key file location can be overridden with `--key-file` or `ENVMGR_KEY_FILE`.
+The key file location can be overridden with `--key-file` or `ENVSTASH_KEY_FILE`.
 
 ## Shell integration
 
 ```bash
 # Load variables into current shell
-eval $(envmgr env)
+eval $(envstash env)
 
 # Run a one-off command with saved variables
-envmgr exec -- npm start
+envstash exec -- npm start
 
 # Isolated mode (only saved variables, no inherited env)
-envmgr exec --isolated -- npm test
+envstash exec --isolated -- npm test
 ```
 
 Supports `bash`, `fish`, and `json` output via `--shell`.
@@ -131,26 +131,26 @@ Supports `bash`, `fish`, and `json` output via `--shell`.
 
 ```bash
 # Export latest version to stdout
-envmgr share > export.env
+envstash share > export.env
 
 # Encrypted export
-envmgr share --encrypt --encryption-method password > export.enc
+envstash share --encrypt --encryption-method password > export.enc
 
 # Import
-envmgr import export.env
-cat export.enc | envmgr import --password secret
+envstash import export.env
+cat export.enc | envstash import --password secret
 
 # Full store backup
-envmgr dump backup.json
-envmgr load backup.json
+envstash dump backup.json
+envstash load backup.json
 ```
 
 ## Storage
 
-Data lives in `~/.local/share/envmgr/`:
+Data lives in `~/.local/share/envstash/`:
 
 ```
-~/.local/share/envmgr/
+~/.local/share/envstash/
 ├── store.db    # SQLite (mode 0600)
 └── key.gpg     # AES key wrapped in GPG/password (mode 0600)
 ```

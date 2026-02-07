@@ -85,7 +85,7 @@ pub fn run(encrypt: &str, recipients: &[String], key_file: Option<&str>) -> Resu
             }
 
             set_file_permissions(&path)?;
-            println!("Initialized envmgr store at {}", dir.display());
+            println!("Initialized envstash store at {}", dir.display());
             println!("Encryption: gpg (key: {})", rcpts.join(", "));
             return Ok(());
         }
@@ -98,17 +98,17 @@ pub fn run(encrypt: &str, recipients: &[String], key_file: Option<&str>) -> Resu
 
     set_file_permissions(&path)?;
 
-    println!("Initialized envmgr store at {}", dir.display());
+    println!("Initialized envstash store at {}", dir.display());
     if encrypt == "password" {
         println!("Encryption: password");
     }
     Ok(())
 }
 
-/// Get password for init: check ENVMGR_PASSWORD first, then prompt
+/// Get password for init: check ENVSTASH_PASSWORD first, then prompt
 /// with confirmation.
 fn get_init_password() -> Result<String> {
-    if let Ok(pw) = std::env::var("ENVMGR_PASSWORD") {
+    if let Ok(pw) = std::env::var("ENVSTASH_PASSWORD") {
         if !pw.is_empty() {
             return Ok(pw);
         }

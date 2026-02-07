@@ -72,10 +72,10 @@ pub fn prompt_password(prompt: &str) -> Result<String> {
 
 /// Get the encryption password.
 ///
-/// Checks `ENVMGR_PASSWORD` environment variable first, then falls back
+/// Checks `ENVSTASH_PASSWORD` environment variable first, then falls back
 /// to an interactive terminal prompt.
 pub fn get_password() -> Result<String> {
-    if let Ok(pw) = std::env::var("ENVMGR_PASSWORD") {
+    if let Ok(pw) = std::env::var("ENVSTASH_PASSWORD") {
         if !pw.is_empty() {
             return Ok(pw);
         }
@@ -85,7 +85,7 @@ pub fn get_password() -> Result<String> {
 
 /// Resolve a password from an explicit value, environment variable, or prompt.
 ///
-/// Priority: explicit CLI argument > `ENVMGR_PASSWORD` env var > interactive prompt.
+/// Priority: explicit CLI argument > `ENVSTASH_PASSWORD` env var > interactive prompt.
 pub fn resolve_password(explicit: Option<&str>) -> Result<String> {
     if let Some(pw) = explicit {
         return Ok(pw.to_string());
@@ -133,12 +133,12 @@ mod tests {
     fn get_password_from_env() {
         // Safety: this test is single-threaded for env var access.
         unsafe {
-            std::env::set_var("ENVMGR_PASSWORD", "from-env");
+            std::env::set_var("ENVSTASH_PASSWORD", "from-env");
         }
         let pw = get_password().unwrap();
         assert_eq!(pw, "from-env");
         unsafe {
-            std::env::remove_var("ENVMGR_PASSWORD");
+            std::env::remove_var("ENVSTASH_PASSWORD");
         }
     }
 
@@ -151,24 +151,24 @@ mod tests {
     #[test]
     fn resolve_password_from_env() {
         unsafe {
-            std::env::set_var("ENVMGR_PASSWORD", "env-pw");
+            std::env::set_var("ENVSTASH_PASSWORD", "env-pw");
         }
         let pw = resolve_password(None).unwrap();
         assert_eq!(pw, "env-pw");
         unsafe {
-            std::env::remove_var("ENVMGR_PASSWORD");
+            std::env::remove_var("ENVSTASH_PASSWORD");
         }
     }
 
     #[test]
     fn resolve_password_explicit_overrides_env() {
         unsafe {
-            std::env::set_var("ENVMGR_PASSWORD", "env-pw");
+            std::env::set_var("ENVSTASH_PASSWORD", "env-pw");
         }
         let pw = resolve_password(Some("explicit-pw")).unwrap();
         assert_eq!(pw, "explicit-pw");
         unsafe {
-            std::env::remove_var("ENVMGR_PASSWORD");
+            std::env::remove_var("ENVSTASH_PASSWORD");
         }
     }
 }

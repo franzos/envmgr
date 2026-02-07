@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn round_trip() {
-        let key = b"test-hmac-key-for-envmgr";
+        let key = b"test-hmac-key-for-envstash";
         let data = b"project=/home/user/proj;file=.env;ts=2024-01-01";
         let tag = compute_hmac(key, data).unwrap();
         assert!(verify_hmac(key, data, &tag).unwrap());
