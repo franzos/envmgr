@@ -2,6 +2,48 @@
 
 A CLI tool for managing `.env` files across git branches. Save, version, diff, restore, and share environment variables with optional encryption.
 
+## Install
+
+**From crates.io:**
+
+```bash
+cargo install envmgr
+```
+
+**Pre-built binaries:**
+
+Download the latest release from [GitHub Releases](https://github.com/franzos/envmgr/releases) and extract the binary to a directory in your `PATH`:
+
+```bash
+# macOS (Apple Silicon)
+curl -sL https://github.com/franzos/envmgr/releases/latest/download/envmgr-aarch64-apple-darwin.tar.gz | tar xz
+sudo mv envmgr /usr/local/bin/
+
+# macOS (Intel)
+curl -sL https://github.com/franzos/envmgr/releases/latest/download/envmgr-x86_64-apple-darwin.tar.gz | tar xz
+sudo mv envmgr /usr/local/bin/
+
+# Linux (x86_64)
+curl -sL https://github.com/franzos/envmgr/releases/latest/download/envmgr-x86_64-unknown-linux-gnu.tar.gz | tar xz
+sudo mv envmgr /usr/local/bin/
+```
+
+**Debian/Ubuntu:**
+
+Download the `.deb` from [GitHub Releases](https://github.com/franzos/envmgr/releases) and install:
+
+```bash
+sudo dpkg -i envmgr_*_amd64.deb
+```
+
+**Fedora/RHEL:**
+
+Download the `.rpm` from [GitHub Releases](https://github.com/franzos/envmgr/releases) and install:
+
+```bash
+sudo rpm -i envmgr-*.x86_64.rpm
+```
+
 ## Quick start
 
 ```bash
@@ -121,4 +163,4 @@ cargo build --release
 
 ## License
 
-TBD
+GPL-3.0
