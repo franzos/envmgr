@@ -55,14 +55,21 @@ pub fn run(encrypt: &str, recipients: &[String], key_file: Option<&str>) -> Resu
                 return Err(Error::GpgNotAvailable);
             }
 
-            let mut rcpts = recipients.to_vec();
+            let rcpts = recipients.to_vec();
             if rcpts.is_empty() {
-                let cwd = std::env::current_dir()?;
-                if let Ok(Some(signing_key)) = crypto::gpg::default_recipient(&cwd) {
-                    rcpts.push(signing_key);
-                } else {
-                    return Err(Error::NoGpgRecipient);
+                let keys = crypto::gpg::list_secret_keys()?;
+                if keys.is_empty() {
+                    return Err(Error::Other(
+                        "No GPG secret keys found. Generate a key with `gpg --gen-key` first."
+                            .to_string(),
+                    ));
                 }
+                eprintln!("\nAvailable GPG keys:\n");
+                for (key_id, uid) in &keys {
+                    eprintln!("  {key_id}  {uid}");
+                }
+                eprintln!("\nRe-run with --recipient <key_id> to select a key.");
+                return Err(Error::NoGpgRecipient);
             }
 
             let aes_key = crypto::aes::generate_key();

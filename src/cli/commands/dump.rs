@@ -2,7 +2,7 @@ use std::io::Write;
 
 use crate::cli;
 use crate::crypto;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::export;
 use crate::export::transport;
 use crate::store::queries;
@@ -38,9 +38,28 @@ pub fn run(
                 transport::encrypt_password(json.as_bytes(), &pw)?
             }
             _ => {
-                // gpg (default)
-                let cwd = std::env::current_dir()?;
-                let recips = crypto::gpg::resolve_recipients(recipients, &cwd)?;
+                let recips = if !recipients.is_empty() {
+                    recipients.to_vec()
+                } else {
+                    let mode_str = queries::get_config(&conn, "encryption_mode")?
+                        .unwrap_or_default();
+                    if mode_str == "gpg" {
+                        let db_key_path = queries::get_config(&conn, "key_file")?;
+                        let env_key_path = std::env::var("ENVSTASH_KEY_FILE").ok();
+                        let key_path = crypto::resolve_key_file(
+                            key_file.map(std::path::Path::new),
+                            env_key_path.as_deref(),
+                            db_key_path.as_deref(),
+                        )
+                        .unwrap_or_else(|| cli::store_dir().join("key.gpg"));
+                        crypto::gpg::key_recipients(&key_path)?
+                    } else {
+                        return Err(Error::NoGpgRecipient);
+                    }
+                };
+                if recips.is_empty() {
+                    return Err(Error::NoGpgRecipient);
+                }
                 transport::encrypt_gpg(json.as_bytes(), &recips)?
             }
         }

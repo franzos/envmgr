@@ -35,6 +35,64 @@ pub fn resolve_recipients(explicit: &[String], cwd: &Path) -> Result<Vec<String>
     Err(Error::NoGpgRecipient)
 }
 
+pub fn list_secret_keys() -> Result<Vec<(String, String)>> {
+    let output = Command::new("gpg")
+        .args(["--list-secret-keys", "--with-colons", "--batch"])
+        .output()
+        .map_err(|e| Error::Gpg(format!("failed to run gpg --list-secret-keys: {e}")))?;
+
+    if !output.status.success() {
+        return Ok(vec![]);
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut keys = Vec::new();
+    let mut current_key_id = None;
+
+    for line in stdout.lines() {
+        let fields: Vec<&str> = line.split(':').collect();
+        if fields[0] == "sec" {
+            current_key_id = fields.get(4).map(|s| s.to_string());
+        } else if fields[0] == "uid" {
+            if let (Some(key_id), Some(uid)) = (current_key_id.take(), fields.get(9)) {
+                keys.push((key_id, uid.to_string()));
+            }
+        }
+    }
+
+    Ok(keys)
+}
+
+/// Extract recipient key IDs from a GPG-encrypted file.
+///
+/// Runs `gpg --list-packets --batch <path>` and parses lines containing
+/// `keyid ` to extract the key ID (last field on those lines).
+pub fn key_recipients(path: &Path) -> Result<Vec<String>> {
+    let output = Command::new("gpg")
+        .args(["--list-packets", "--batch"])
+        .arg(path)
+        .output()
+        .map_err(|e| Error::Gpg(format!("failed to run gpg --list-packets: {e}")))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let combined = format!("{stdout}{stderr}");
+
+    let mut keys = Vec::new();
+    for line in combined.lines() {
+        if let Some(pos) = line.find("keyid ") {
+            let after = &line[pos + 6..];
+            if let Some(key_id) = after.split_whitespace().next() {
+                if !key_id.is_empty() {
+                    keys.push(key_id.to_string());
+                }
+            }
+        }
+    }
+
+    Ok(keys)
+}
+
 /// Encrypt data with GPG for the given recipients.
 ///
 /// Shells out to `gpg --encrypt --armor --recipient <r> ...` and returns

@@ -209,9 +209,9 @@ pub enum Commands {
         /// Transport encryption method: gpg (default) or password
         #[arg(long, default_value = "gpg")]
         encryption_method: String,
-        /// GPG recipient key ID (defaults to git signing key)
+        /// GPG recipient key ID(s) for transport encryption
         #[arg(long)]
-        recipient: Option<String>,
+        recipient: Vec<String>,
         /// Password for password-based transport encryption (scripted/CI use)
         #[arg(long)]
         password: Option<String>,
@@ -356,7 +356,6 @@ pub fn run() -> Result<()> {
             password,
             force,
         } => commands::share::run(
-            &cwd,
             file.as_deref(),
             hash.as_deref(),
             ignore,
@@ -364,7 +363,7 @@ pub fn run() -> Result<()> {
             key_file,
             encrypt,
             &encryption_method,
-            recipient.as_deref(),
+            &recipient,
             password.as_deref(),
             force,
         ),

@@ -99,10 +99,12 @@ envstash diff 1 2
 Three modes, chosen at init time:
 
 ```bash
-envstash init                    # no encryption
-envstash init --encrypt gpg      # GPG (supports Yubikey)
-envstash init --encrypt password # password-based (argon2id)
+envstash init                                    # no encryption
+envstash init --encrypt gpg --recipient <key_id> # GPG (supports Yubikey)
+envstash init --encrypt password                 # password-based (argon2id)
 ```
+
+Running `envstash init --encrypt gpg` without `--recipient` lists available GPG keys.
 
 Architecture (inspired by [Tomb](https://github.com/dyne/Tomb)):
 - A random AES-256-GCM key encrypts variable values at rest
@@ -133,8 +135,11 @@ Supports `bash`, `fish`, and `json` output via `--shell`.
 # Export latest version to stdout
 envstash share > export.env
 
-# Encrypted export
+# Encrypted export (password)
 envstash share --encrypt --encryption-method password > export.enc
+
+# Encrypted export (GPG, one or more recipients)
+envstash share --encrypt --recipient <key_id> > export.gpg
 
 # Import
 envstash import export.env

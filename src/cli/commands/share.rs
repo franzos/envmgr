@@ -1,8 +1,6 @@
 use std::io::Write;
-use std::path::Path;
 
 use crate::cli;
-use crate::crypto::gpg;
 use crate::error::{Error, Result};
 use crate::export;
 use crate::export::transport;
@@ -12,7 +10,6 @@ use crate::store::queries;
 /// optionally encrypting with transport encryption.
 #[allow(clippy::too_many_arguments)]
 pub fn run(
-    cwd: &Path,
     file: Option<&str>,
     hash: Option<&str>,
     ignore_checks: bool,
@@ -20,13 +17,14 @@ pub fn run(
     key_file: Option<&str>,
     encrypt: bool,
     encryption_method: &str,
-    recipient: Option<&str>,
+    recipients: &[String],
     password: Option<&str>,
     force: bool,
 ) -> Result<()> {
+    let cwd = std::env::current_dir()?;
     let conn = cli::require_store()?;
     let aes_key = cli::load_encryption_key(&conn, key_file)?;
-    let (project_path, git_ctx) = cli::resolve_project(cwd)?;
+    let (project_path, git_ctx) = cli::resolve_project(&cwd)?;
     let current_branch = git_ctx.as_ref().map(|c| c.branch.as_str());
 
     // Resolve which save to share.
@@ -37,7 +35,7 @@ pub fn run(
     } else {
         // Find the latest save, optionally filtered by file path.
         let file_filter = file.map(|f| {
-            cli::resolve_file_path(f, cwd, &git_ctx)
+            cli::resolve_file_path(f, &cwd, &git_ctx)
                 .unwrap_or_else(|_| f.to_string())
         });
 
@@ -69,9 +67,8 @@ pub fn run(
         let encrypted_bytes = encrypt_export(
             serialized.as_bytes(),
             encryption_method,
-            recipient,
+            recipients,
             password,
-            cwd,
         )?;
 
         // Refuse to write binary encrypted data to a terminal unless --force.
@@ -97,9 +94,8 @@ pub fn run(
 fn encrypt_export(
     data: &[u8],
     method: &str,
-    recipient: Option<&str>,
+    recipients: &[String],
     password: Option<&str>,
-    cwd: &Path,
 ) -> Result<Vec<u8>> {
     match method {
         "password" => {
@@ -107,9 +103,10 @@ fn encrypt_export(
             transport::encrypt_password(data, &pw)
         }
         _ => {
-            let explicit: Vec<String> = recipient.iter().map(|r| r.to_string()).collect();
-            let recipients = gpg::resolve_recipients(&explicit, cwd)?;
-            transport::encrypt_gpg(data, &recipients)
+            if recipients.is_empty() {
+                return Err(Error::NoGpgRecipient);
+            }
+            transport::encrypt_gpg(data, recipients)
         }
     }
 }
@@ -356,7 +353,7 @@ mod tests {
     #[test]
     fn encrypt_export_password() {
         let data = b"# envstash export\nDB_HOST=localhost\n";
-        let encrypted = encrypt_export(data, "password", None, Some("test-pw"), Path::new("/tmp"))
+        let encrypted = encrypt_export(data, "password", &[], Some("test-pw"))
             .unwrap();
         assert!(encrypted.starts_with(b"EVPW"));
 
@@ -373,12 +370,14 @@ mod tests {
         let data = b"test data";
 
         // With explicit password it works.
-        let result = encrypt_export(data, "password", None, Some("pw"), Path::new("/tmp"));
+        let result = encrypt_export(data, "password", &[], Some("pw"));
         assert!(result.is_ok());
     }
 
     #[test]
     fn resolve_gpg_recipients_explicit() {
+        use std::path::Path;
+        use crate::crypto::gpg;
         let result = gpg::resolve_recipients(
             &["ABCD1234".to_string()],
             Path::new("/tmp"),
