@@ -7,14 +7,14 @@ pub fn parse_dest(target: &str) -> &str {
     target.strip_prefix("ssh://").unwrap_or(target)
 }
 
-/// Send data to a remote host via `ssh <dest> 'envstash import'`.
-/// Pipes the bytes to the remote envstash import's stdin.
+/// Send data to a remote host via `ssh <dest> 'envstash receive'`.
+/// Pipes the bytes to the remote envstash receive's stdin.
 pub fn send(data: &[u8], dest: &str) -> Result<()> {
     let dest = parse_dest(dest);
 
     let mut child = Command::new("ssh")
         .arg(dest)
-        .arg("envstash import")
+        .arg("envstash receive")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -46,14 +46,14 @@ pub fn send(data: &[u8], dest: &str) -> Result<()> {
     Ok(())
 }
 
-/// Fetch data from a remote host via `ssh <dest> 'envstash share'`.
-/// Returns the bytes from the remote envstash share's stdout.
+/// Fetch data from a remote host via `ssh <dest> 'envstash send'`.
+/// Returns the bytes from the remote envstash send's stdout.
 pub fn fetch(source: &str) -> Result<Vec<u8>> {
     let dest = parse_dest(source);
 
     let output = Command::new("ssh")
         .arg(dest)
-        .arg("envstash share")
+        .arg("envstash send")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()

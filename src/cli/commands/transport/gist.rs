@@ -23,7 +23,7 @@ pub fn send(data: &[u8], public: bool, filename: Option<&str>) -> Result<String>
     // gh gist create requires a file, so write to a temp file.
     let name = match filename {
         Some(n) => format!("{n}.env"),
-        None => "envstash-share.env".to_string(),
+        None => "envstash-send.env".to_string(),
     };
     let file_path = std::env::temp_dir().join(name);
     std::fs::write(&file_path, data)

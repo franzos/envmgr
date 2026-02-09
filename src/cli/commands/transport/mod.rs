@@ -22,13 +22,13 @@ pub fn send(target: &str, data: &[u8], public: bool, filename: Option<&str>) -> 
         let url = gist::send(&payload, public, filename)?;
         Ok(Some(url))
     } else if let Some(addr) = target.strip_prefix("email:") {
-        email::send(data, addr, "envstash share")?;
+        email::send(data, addr, "envstash send")?;
         Ok(None)
     } else if target.starts_with("ssh://") {
         ssh::send(data, target)?;
         Ok(None)
     } else if is_url(target) {
-        let headers = config::load().share.headers;
+        let headers = config::load().send.headers;
         let url = paste::send(data, target, &headers)?;
         Ok(Some(url))
     } else {
@@ -48,7 +48,7 @@ pub fn fetch(source: &str) -> Result<Vec<u8>> {
         // If the gist content looks base64-encoded, decode it.
         maybe_base64_decode(&raw)
     } else if is_url(source) {
-        let headers = config::load().share.headers;
+        let headers = config::load().send.headers;
         paste::fetch(source, &headers)
     } else {
         Err(Error::Other(format!(

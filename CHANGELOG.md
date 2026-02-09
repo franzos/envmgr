@@ -1,7 +1,25 @@
+## [0.1.6] - 2026-02-10
+
+### Added
+- Shell tab-completion for version hashes (bash, zsh, fish)
+
+### Changed
+- `ls` and `log` now show content hashes as primary version identifiers
+- Numeric indices still work as a convenient shortcut
+- CLI commands renamed to follow Unix conventions: 
+  - `share` → `send`
+  - `import` → `receive`
+- Config section `[share]` → `[send]`
+
 ## [0.1.5] - 2026-02-09
 
 ### Changed
-- CLI commands renamed to follow Unix conventions: `list` → `ls`, `delete` → `rm`, `history` → `log`, `apply` → `checkout` (`co`)
+- CLI commands renamed to follow Unix conventions: 
+  - `list` → `ls`
+  - `delete` → `rm`
+  - `history` → `log`
+  - `apply` → `checkout` (`co`)
+- Config section `[share]` → `[send]`
 - Old command names still work as hidden aliases
 - `init` moved to its own "Setup" section in `--help`
 

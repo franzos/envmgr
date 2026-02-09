@@ -4,6 +4,7 @@ pub mod output;
 use std::path::{Path, PathBuf};
 
 use clap::{Parser, Subcommand};
+use clap_complete::engine::{ArgValueCompleter, CompletionCandidate};
 use rusqlite::Connection;
 
 use crate::crypto;
@@ -38,8 +39,8 @@ Daily Operations:
   global     List all projects with save counts
 
 Sharing:
-  share      Share a saved .env version (stdout, paste, gist, email, ssh)
-  import     Import a shared .env file (stdin, file, URL, gist, ssh)
+  send       Send a saved .env version (stdout, paste, gist, email, ssh)
+  receive    Receive a shared .env file (stdin, file, URL, gist, ssh)
 
 Backup & Transfer:
   dump       Export entire store to a file
@@ -105,9 +106,11 @@ pub enum Commands {
 
     /// Show diff between two versions or files
     Diff {
-        /// First version (number, hash, or file path)
+        /// First version (hash prefix or file path)
+        #[arg(add = ArgValueCompleter::new(complete_version))]
         a: String,
-        /// Second version (number, hash, or file path)
+        /// Second version (hash prefix or file path)
+        #[arg(add = ArgValueCompleter::new(complete_version))]
         b: String,
         /// Show all variables including unchanged
         #[arg(long)]
@@ -120,7 +123,8 @@ pub enum Commands {
     /// Apply a saved version to disk
     #[command(name = "checkout", alias = "co", alias = "apply")]
     Apply {
-        /// Version number or hash
+        /// Version hash (prefix match supported)
+        #[arg(add = ArgValueCompleter::new(complete_version))]
         version: String,
         /// Overwrite without confirmation
         #[arg(long)]
@@ -132,7 +136,8 @@ pub enum Commands {
 
     /// Print export statements for a saved version
     Env {
-        /// Version number or hash (default: latest)
+        /// Version hash (default: latest, prefix match supported)
+        #[arg(add = ArgValueCompleter::new(complete_version))]
         version: Option<String>,
         /// Filter variables by pattern (e.g. DB_*)
         #[arg(short, long)]
@@ -144,7 +149,8 @@ pub enum Commands {
 
     /// Run a command with saved environment variables
     Exec {
-        /// Version number or hash (optional)
+        /// Version hash (optional, prefix match supported)
+        #[arg(add = ArgValueCompleter::new(complete_version))]
         version: Option<String>,
         /// Filter variables by pattern
         #[arg(short, long)]
@@ -180,7 +186,8 @@ pub enum Commands {
     /// Delete saved versions
     #[command(name = "rm", alias = "delete")]
     Delete {
-        /// Version number to delete
+        /// Version hash to delete (prefix match supported)
+        #[arg(add = ArgValueCompleter::new(complete_version))]
         version: Option<String>,
         /// Delete all versions for a branch
         #[arg(long)]
@@ -196,21 +203,22 @@ pub enum Commands {
     /// List all projects with save counts
     Global,
 
-    /// Share a saved .env version (export to stdout)
-    #[command(long_about = "Share a saved .env version.\n\n\
+    /// Send a saved .env version (export to stdout)
+    #[command(name = "send", alias = "share",
+        long_about = "Send a saved .env version.\n\n\
         By default, outputs to stdout. Use --to to send via a transport backend:\n\n  \
         --to                       Upload to 0x0.st (or config default)\n  \
         --to https://my.paste.srv  Upload to a custom paste service\n  \
         --to gist                  Create a GitHub Gist via gh CLI\n  \
         --to email:<address>       Send via msmtp or sendmail\n  \
-        --to ssh://user@host       Pipe to remote envstash import via SSH\n\n\
+        --to ssh://user@host       Pipe to remote envstash receive via SSH\n\n\
         Configure defaults and auth in ~/.config/envstash/config.toml:\n\n  \
-        [share]\n  \
+        [send]\n  \
         default_to = \"https://my.paste.service\"\n\n  \
-        [share.headers]\n  \
+        [send.headers]\n  \
         Authorization = \"Bearer mytoken\"")]
-    Share {
-        /// File path to share (default: latest saved)
+    Send {
+        /// File path to send (default: latest saved)
         file: Option<String>,
         /// Lookup by content hash
         #[arg(long)]
@@ -244,13 +252,14 @@ pub enum Commands {
         public: bool,
     },
 
-    /// Import a shared .env file into the store
-    #[command(long_about = "Import a shared .env file into the store.\n\n\
+    /// Receive a shared .env file into the store
+    #[command(name = "receive", alias = "import",
+        long_about = "Receive a shared .env file into the store.\n\n\
         By default, reads from a file or stdin. Use --from to fetch via a transport backend:\n\n  \
         --from https://<url>       Fetch via curl (paste URLs, raw gist URLs, etc.)\n  \
-        --from ssh://user@host     Pipe from remote envstash share via SSH")]
-    Import {
-        /// Path to import file (reads from stdin if omitted)
+        --from ssh://user@host     Pipe from remote envstash send via SSH")]
+    Receive {
+        /// Path to file (reads from stdin if omitted)
         file: Option<String>,
         /// Password for decrypting password-encrypted imports
         #[arg(long)]
@@ -376,7 +385,7 @@ pub fn run() -> Result<()> {
             force,
         ),
         Commands::Global => commands::global::run(),
-        Commands::Share {
+        Commands::Send {
             file,
             hash,
             ignore,
@@ -388,7 +397,7 @@ pub fn run() -> Result<()> {
             force,
             to,
             public,
-        } => commands::share::run(
+        } => commands::send::run(
             file.as_deref(),
             hash.as_deref(),
             ignore,
@@ -402,11 +411,11 @@ pub fn run() -> Result<()> {
             to.as_deref(),
             public,
         ),
-        Commands::Import {
+        Commands::Receive {
             file,
             password,
             from,
-        } => commands::import::run(
+        } => commands::receive::run(
             &cwd,
             file.as_deref(),
             key_file,
@@ -535,60 +544,30 @@ pub fn resolve_file_path(
     }
 }
 
-/// Build the combined version list (branch saves + cross-branch history).
-///
-/// Returns `(combined_list, branch_save_count)`.
-pub fn build_version_list(
-    conn: &Connection,
-    project_path: &str,
-    current_branch: Option<&str>,
-    max: usize,
-) -> Result<(Vec<SaveMetadata>, usize)> {
-    if let Some(b) = current_branch {
-        let branch_saves =
-            queries::list_saves(conn, project_path, Some(b), None, max, None)?;
-        let branch_count = branch_saves.len();
-        let mut result = branch_saves;
-
-        if result.len() < max {
-            let remaining = max - result.len();
-            let history =
-                queries::list_saves_history(conn, project_path, b, remaining)?;
-            result.extend(history);
-        }
-
-        Ok((result, branch_count))
-    } else {
-        let saves = queries::list_saves(conn, project_path, None, None, max, None)?;
-        let count = saves.len();
-        Ok((saves, count))
-    }
-}
-
-/// Resolve a version reference (1-indexed number or content hash prefix).
+/// Resolve a version reference (content hash prefix, or 1-indexed number as fallback).
 pub fn resolve_version(
     conn: &Connection,
     project_path: &str,
     current_branch: Option<&str>,
     version_ref: &str,
 ) -> Result<SaveMetadata> {
-    // Try as a 1-indexed number.
+    // Try hash prefix first (primary).
+    if let Some(save) = queries::get_save_by_hash(conn, project_path, version_ref)? {
+        return Ok(save);
+    }
+
+    // Fallback: try as a 1-indexed number.
     if let Ok(n) = version_ref.parse::<usize>() {
         if n == 0 {
             return Err(Error::SaveNotFound("0".to_string()));
         }
-
-        let (all, _) = build_version_list(conn, project_path, current_branch, n)?;
-
-        if n <= all.len() {
-            return Ok(all[n - 1].clone());
+        let saves = queries::list_saves(conn, project_path, current_branch, None, n, None)?;
+        if n <= saves.len() {
+            return Ok(saves[n - 1].clone());
         }
-        return Err(Error::SaveNotFound(version_ref.to_string()));
     }
 
-    // Try as a content hash (exact or prefix).
-    queries::get_save_by_hash(conn, project_path, version_ref)?
-        .ok_or_else(|| Error::SaveNotFound(version_ref.to_string()))
+    Err(Error::SaveNotFound(version_ref.to_string()))
 }
 
 /// Compute the content hash of the .env file currently on disk.
@@ -620,6 +599,42 @@ pub fn matches_filter(name: &str, pattern: &str) -> bool {
     } else {
         name == pattern
     }
+}
+
+/// Shell completion: suggest saved version hashes for the current project.
+fn complete_version(current: &std::ffi::OsStr) -> Vec<CompletionCandidate> {
+    let prefix = current.to_string_lossy();
+    let conn = match require_store() {
+        Ok(c) => c,
+        Err(_) => return vec![],
+    };
+    let cwd = match std::env::current_dir() {
+        Ok(d) => d,
+        Err(_) => return vec![],
+    };
+    let (project_path, _) = match resolve_project(&cwd) {
+        Ok(p) => p,
+        Err(_) => return vec![],
+    };
+
+    let saves = match queries::list_saves(&conn, &project_path, None, None, 50, None) {
+        Ok(s) => s,
+        Err(_) => return vec![],
+    };
+
+    saves
+        .into_iter()
+        .filter(|s| s.content_hash.starts_with(prefix.as_ref()))
+        .map(|s| {
+            let hash = output::short_hash(&s.content_hash);
+            let help = match &s.message {
+                Some(m) => format!("{} -- {m}", s.timestamp),
+                None => s.timestamp.clone(),
+            };
+            CompletionCandidate::new(hash)
+                .help(Some(help.into()))
+        })
+        .collect()
 }
 
 #[cfg(test)]

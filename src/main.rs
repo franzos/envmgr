@@ -1,3 +1,5 @@
+use clap::CommandFactory;
+
 pub mod cli;
 pub mod config;
 pub mod crypto;
@@ -13,6 +15,8 @@ pub mod types;
 mod test_helpers;
 
 fn main() {
+    clap_complete::CompleteEnv::with_factory(cli::Cli::command).complete();
+
     if let Err(e) = cli::run() {
         eprintln!("error: {e}");
         std::process::exit(1);

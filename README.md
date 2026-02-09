@@ -59,19 +59,22 @@ envstash save -m "trying new DB config"
 # List saved versions
 envstash ls
 
-# Restore a saved version
+# Restore a saved version (by hash prefix, or number)
+envstash checkout abcdef12
 envstash checkout 1
 
 # See what changed between versions
-envstash diff 1 2
+envstash diff abcdef12 9f3e7a01
 ```
+
+Versions can be referenced by **hash prefix** (stable, tab-completable) or by **number** (convenient shortcut, but changes as new versions are saved).
 
 ## Features
 
 - **Version .env files** per git branch and commit
 - **Diff** variables by name (order-independent)
 - **Restore** saved versions to disk, or inject into the shell environment
-- **Share** exports with teammates (with optional GPG or password encryption)
+- **Send/receive** exports with teammates (with optional GPG or password encryption)
 - **Dump/load** the entire store for backup and migration
 - **Works outside git repos** using folder path as identifier
 
@@ -82,15 +85,15 @@ envstash diff 1 2
 | `envstash init` | Initialize the store (choose encryption mode) |
 | `envstash save [file] [-m msg]` | Save a `.env` file with optional message |
 | `envstash ls` | List saved versions on the current branch |
-| `envstash diff <a> <b>` | Diff two versions (by number or hash) |
+| `envstash diff <a> <b>` | Diff two versions (by hash prefix) |
 | `envstash checkout <version>` | Restore a version to disk |
 | `envstash env [version]` | Print `export` statements for shell eval |
 | `envstash exec [version] -- <cmd>` | Run a command with saved env vars |
 | `envstash log` | Show what changed between consecutive versions |
 | `envstash rm <version>` | Remove saved versions |
 | `envstash global` | List all projects with saved .env files |
-| `envstash share [--to <target>]` | Export a version for sharing |
-| `envstash import [--from <source>]` | Import a shared export |
+| `envstash send [--to <target>]` | Send a version (stdout, paste, gist, email, ssh) |
+| `envstash receive [--from <source>]` | Receive a shared version |
 | `envstash dump <path>` | Export the entire store |
 | `envstash load <path>` | Import a full dump |
 
@@ -129,21 +132,36 @@ envstash exec --isolated -- npm test
 
 Supports `bash`, `fish`, and `json` output via `--shell`.
 
+### Tab completion
+
+Enable tab-completion for version hashes (and all subcommands/flags):
+
+```bash
+# Bash (~/.bashrc)
+source <(COMPLETE=bash envstash)
+
+# Zsh (~/.zshrc)
+source <(COMPLETE=zsh envstash)
+
+# Fish (~/.config/fish/config.fish)
+source (COMPLETE=fish envstash | psub)
+```
+
 ## Sharing
 
 ```bash
 # Export latest version to stdout
-envstash share > export.env
+envstash send > export.env
 
 # Encrypted export (password)
-envstash share --encrypt --encryption-method password > export.enc
+envstash send --encrypt --encryption-method password > export.enc
 
 # Encrypted export (GPG, one or more recipients)
-envstash share --encrypt --recipient <key_id> > export.gpg
+envstash send --encrypt --recipient <key_id> > export.gpg
 
-# Import
-envstash import export.env
-cat export.enc | envstash import --password secret
+# Receive
+envstash receive export.env
+cat export.enc | envstash receive --password secret
 
 # Full store backup
 envstash dump backup.json
@@ -152,48 +170,48 @@ envstash load backup.json
 
 ### Remote sharing
 
-Share and import via paste services, GitHub Gists, email, or SSH:
+Send and receive via paste services, GitHub Gists, email, or SSH:
 
 ```bash
 # Upload to 0x0.st (default paste service)
-envstash share --to
+envstash send --to
 # Custom paste instance
-envstash share --to https://my.paste.service
+envstash send --to https://my.paste.service
 
-# Import from a URL (paste, raw gist, etc.)
-envstash import --from https://0x0.st/abc.env
+# Receive from a URL (paste, raw gist, etc.)
+envstash receive --from https://0x0.st/abc.env
 
 # Create a GitHub Gist (requires `gh auth login`)
-envstash share --to gist
+envstash send --to gist
 # Public gist
-envstash share --to gist --public
-# Import from a gist URL
-envstash import --from https://gist.github.com/user/abc123
+envstash send --to gist --public
+# Receive from a gist URL
+envstash receive --from https://gist.github.com/user/abc123
 
 # Send via email (uses msmtp or sendmail)
-envstash share --to email:teammate@example.com
+envstash send --to email:teammate@example.com
 
 # Pipe to remote envstash via SSH
-envstash share --to ssh://user@server
+envstash send --to ssh://user@server
 # Pipe from remote envstash via SSH
-envstash import --from ssh://user@server
+envstash receive --from ssh://user@server
 ```
 
 All transport backends work with encryption:
 
 ```bash
-envstash share --encrypt --encryption-method password --to
-envstash import --from https://0x0.st/abc.env --password secret
+envstash send --encrypt --encryption-method password --to
+envstash receive --from https://0x0.st/abc.env --password secret
 ```
 
 The default target for bare `--to` can be changed in `~/.config/envstash/config.toml`:
 
 ```toml
-[share]
+[send]
 default_to = "https://my.paste.service"
 # or any other target: "ssh://user@host", "gist", "email:team@example.com"
 
-[share.headers]
+[send.headers]
 Authorization = "Bearer mytoken"
 ```
 

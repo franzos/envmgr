@@ -48,11 +48,11 @@ pub fn run(
         };
 
         println!(
-            "{}. {}: {} | {}{}{}",
-            format!("{num}").bold(),
+            "{}. {} {}: {}{}{}",
+            format!("{num}").dimmed(),
+            hash.bold(),
             save.file_path,
             save.timestamp.dimmed(),
-            hash.dimmed(),
             branch_label,
             msg,
         );

@@ -100,6 +100,6 @@ pub fn run(
     }
 
     Err(Error::Other(
-        "Specify a version number, --branch, or --all.".to_string(),
+        "Specify a version hash, --branch, or --all.".to_string(),
     ))
 }

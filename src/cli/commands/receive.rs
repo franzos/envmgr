@@ -12,7 +12,7 @@ use crate::store::queries;
 
 use super::transport as remote;
 
-/// Run the `import` command: read an exported envelope (possibly encrypted)
+/// Run the `receive` command: read an exported envelope (possibly encrypted)
 /// and insert into the store.
 pub fn run(
     cwd: &Path,

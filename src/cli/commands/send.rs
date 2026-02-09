@@ -10,7 +10,7 @@ use crate::store::queries;
 
 use super::transport as remote;
 
-/// Run the `share` command: serialize a saved version to stdout,
+/// Run the `send` command: serialize a saved version to stdout,
 /// optionally encrypting with transport encryption.
 #[allow(clippy::too_many_arguments)]
 pub fn run(
@@ -85,7 +85,7 @@ pub fn run(
     let resolved_to = to.map(|t| {
         if t.is_empty() {
             let cfg = crate::config::load();
-            cfg.share
+            cfg.send
                 .default_to
                 .unwrap_or_else(|| "https://0x0.st".to_string())
         } else {

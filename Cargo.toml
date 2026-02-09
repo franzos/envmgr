@@ -1,6 +1,6 @@
 [package]
 name = "envstash"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 authors = ["Franz Geffke <mail@gofranz.com>"]
 description = "Manage .env files across git branches with versioning, diffing, and optional encryption"
@@ -17,6 +17,7 @@ base64 = "0.22"
 argon2 = "0.5"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive"] }
+clap_complete = { version = "4.5", features = ["unstable-dynamic"] }
 hmac = "0.12"
 rand = "0.8"
 rpassword = "5"

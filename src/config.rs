@@ -18,12 +18,12 @@ pub fn config_path() -> PathBuf {
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
-    pub share: ShareConfig,
+    pub send: SendConfig,
 }
 
-/// Config for the `share` command.
+/// Config for the `send` command.
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct ShareConfig {
+pub struct SendConfig {
     /// Default target for `--to` when no value is given.
     pub default_to: Option<String>,
     /// Custom HTTP headers to send with paste uploads.
@@ -61,18 +61,18 @@ mod tests {
     #[test]
     fn default_config_has_no_default_to() {
         let cfg = Config::default();
-        assert!(cfg.share.default_to.is_none());
+        assert!(cfg.send.default_to.is_none());
     }
 
     #[test]
     fn parse_full_config() {
         let toml = r#"
-[share]
+[send]
 default_to = "https://my.paste.service"
 "#;
         let cfg: Config = toml::from_str(toml).unwrap();
         assert_eq!(
-            cfg.share.default_to.as_deref(),
+            cfg.send.default_to.as_deref(),
             Some("https://my.paste.service")
         );
     }
@@ -80,20 +80,20 @@ default_to = "https://my.paste.service"
     #[test]
     fn parse_empty_config() {
         let cfg: Config = toml::from_str("").unwrap();
-        assert!(cfg.share.default_to.is_none());
+        assert!(cfg.send.default_to.is_none());
     }
 
     #[test]
-    fn parse_partial_config_without_share() {
+    fn parse_partial_config_without_send() {
         let toml = "# empty config\n";
         let cfg: Config = toml::from_str(toml).unwrap();
-        assert!(cfg.share.default_to.is_none());
+        assert!(cfg.send.default_to.is_none());
     }
 
     #[test]
     fn load_missing_file_returns_default() {
         let cfg = load_from(std::path::Path::new("/tmp/nonexistent-envstash-test.toml"));
-        assert!(cfg.share.default_to.is_none());
+        assert!(cfg.send.default_to.is_none());
     }
 
     #[test]
@@ -102,13 +102,13 @@ default_to = "https://my.paste.service"
         let path = dir.path().join("config.toml");
         std::fs::write(
             &path,
-            "[share]\ndefault_to = \"https://paste.example.com\"\n",
+            "[send]\ndefault_to = \"https://paste.example.com\"\n",
         )
         .unwrap();
 
         let cfg = load_from(&path);
         assert_eq!(
-            cfg.share.default_to.as_deref(),
+            cfg.send.default_to.as_deref(),
             Some("https://paste.example.com")
         );
     }
@@ -120,32 +120,32 @@ default_to = "https://my.paste.service"
         std::fs::write(&path, "this is not valid toml {{{{").unwrap();
 
         let cfg = load_from(&path);
-        assert!(cfg.share.default_to.is_none());
+        assert!(cfg.send.default_to.is_none());
     }
 
     #[test]
     fn default_config_has_empty_headers() {
         let cfg = Config::default();
-        assert!(cfg.share.headers.is_empty());
+        assert!(cfg.send.headers.is_empty());
     }
 
     #[test]
     fn parse_config_with_headers() {
         let toml = r#"
-[share]
+[send]
 default_to = "https://paste.example.com"
 
-[share.headers]
+[send.headers]
 Authorization = "Bearer mytoken"
 X-Custom = "value"
 "#;
         let cfg: Config = toml::from_str(toml).unwrap();
         assert_eq!(
-            cfg.share.headers.get("Authorization").map(|s| s.as_str()),
+            cfg.send.headers.get("Authorization").map(|s| s.as_str()),
             Some("Bearer mytoken")
         );
         assert_eq!(
-            cfg.share.headers.get("X-Custom").map(|s| s.as_str()),
+            cfg.send.headers.get("X-Custom").map(|s| s.as_str()),
             Some("value")
         );
     }
@@ -153,10 +153,10 @@ X-Custom = "value"
     #[test]
     fn parse_config_without_headers() {
         let toml = r#"
-[share]
+[send]
 default_to = "https://paste.example.com"
 "#;
         let cfg: Config = toml::from_str(toml).unwrap();
-        assert!(cfg.share.headers.is_empty());
+        assert!(cfg.send.headers.is_empty());
     }
 }

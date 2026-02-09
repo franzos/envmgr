@@ -148,6 +148,7 @@ fn print_saves_short(
 ) {
     for (i, save) in saves.iter().enumerate() {
         let num = start_num + i;
+        let hash = output::short_hash(&save.content_hash);
         let marker = match cli::disk_content_hash(project_path, &save.file_path) {
             Some(ref h) if *h == save.content_hash => format!(" {}", "*".bold().green()),
             _ => String::new(),
@@ -156,8 +157,9 @@ fn print_saves_short(
 
         if show_branch && !save.branch.is_empty() {
             println!(
-                "{}. {}: {} / {}{}{}",
-                format!("{num}").bold(),
+                "{}. {} {}: {} / {}{}{}",
+                format!("{num}").dimmed(),
+                hash.bold(),
                 save.file_path,
                 save.timestamp.dimmed(),
                 save.branch.cyan(),
@@ -166,8 +168,9 @@ fn print_saves_short(
             );
         } else {
             println!(
-                "{}. {}: {}{}{}",
-                format!("{num}").bold(),
+                "{}. {} {}: {}{}{}",
+                format!("{num}").dimmed(),
+                hash.bold(),
                 save.file_path,
                 save.timestamp.dimmed(),
                 marker,
@@ -187,36 +190,35 @@ fn print_saves_table(
     table.load_preset(presets::NOTHING);
 
     if show_branch {
-        table.set_header(vec!["#", "File", "Timestamp", "Hash", "Branch", "Msg"]);
+        table.set_header(vec!["#", "Hash", "File", "Timestamp", "Branch", "Msg"]);
     } else {
-        table.set_header(vec!["#", "File", "Timestamp", "Hash", "Msg"]);
+        table.set_header(vec!["#", "Hash", "File", "Timestamp", "Msg"]);
     }
 
     for (i, save) in saves.iter().enumerate() {
-        let num = start_num + i;
+        let num = format!("{}", start_num + i);
         let marker = match cli::disk_content_hash(project_path, &save.file_path) {
             Some(ref h) if *h == save.content_hash => " *",
             _ => "",
         };
-        let hash = output::short_hash(&save.content_hash);
+        let hash = format!("{}{marker}", output::short_hash(&save.content_hash));
         let msg = save.message.as_deref().unwrap_or("");
-        let num_str = format!("{num}{marker}");
 
         if show_branch {
             table.add_row(vec![
-                &num_str,
+                &num,
+                &hash,
                 &save.file_path,
                 &save.timestamp,
-                &hash,
                 &save.branch,
                 msg,
             ]);
         } else {
             table.add_row(vec![
-                &num_str,
+                &num,
+                &hash,
                 &save.file_path,
                 &save.timestamp,
-                &hash,
                 msg,
             ]);
         }
